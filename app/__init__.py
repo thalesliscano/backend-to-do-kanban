@@ -2,7 +2,7 @@ import sqlite3
 from flask import Flask
 from flasgger import Swagger
 from .routes.usuarios import usuarios_bp
-
+from .routes.tarefas import tarefas_bp
 # Função para conectar ao banco de dados SQLite
 def conectar_bd():
     return sqlite3.connect('database.db')  # Ou o nome do seu arquivo de banco de dados
@@ -20,5 +20,8 @@ def create_app():
     # Registrar rotas, blueprints, etc.
     from .routes import usuarios
     app.register_blueprint(usuarios.usuarios_bp)
+
+    # Registrar o blueprint de tarefas
+    app.register_blueprint(tarefas_bp)  # Registrando o blueprint de tarefas
 
     return app

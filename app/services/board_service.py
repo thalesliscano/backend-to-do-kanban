@@ -1,23 +1,27 @@
 from ..models import conectar_bd
 
+# board_service.py
+
 class BoardService:
+
     @staticmethod
-    def criar_board(user_id, name):
+    def criar_board(user_id, nome_board):
+        # Conecte-se ao banco de dados
         conn = conectar_bd()
         cursor = conn.cursor()
-        
-        # Insere o novo board
+
+        # Insira um novo board com o nome e associado ao usuário
         cursor.execute(
-            "INSERT INTO boards (user_id, name) VALUES (?, ?)",
-            (user_id, name)
+            "INSERT INTO boards (name, user_id) VALUES (?, ?)",
+            (nome_board, user_id)
         )
         conn.commit()
-        
-        # Retorna o ID e nome do board recém-criado
+
+        # Retorna o board criado com seu ID
         board_id = cursor.lastrowid
         conn.close()
-        
+
         return {
             'id': board_id,
-            'name': name
+            'name': nome_board
         }

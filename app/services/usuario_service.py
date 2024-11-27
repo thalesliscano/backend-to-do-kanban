@@ -1,52 +1,84 @@
-from app.services.auth import gerar_token  # Importando a função para gerar o token
-from app.db import conectar_bd  # Mantemos a conexão com o banco de dados
-
+import sqlite3
+from ..models import conectar_bd
+from app.services.auth import AuthService  # Corrigido
 class UsuarioService:
+    
     @staticmethod
     def criar_usuario(nome, email, senha):
         conn = conectar_bd()
         cursor = conn.cursor()
-
-        # Verifica se o e-mail já está em uso
-        cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
-        if cursor.fetchone():
-            conn.close()
-            return {"erro": "E-mail já em uso"}
         
-        # Cria o usuário
+        # Verifica se o e-mail já está em uso
+        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+        if cursor.fetchone():
+            return {'erro': 'E-mail já em uso'}
+        
+        # Insere o novo usuário
         cursor.execute(
             "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
             (nome, email, senha)
         )
-        user_id = cursor.lastrowid  # ID do usuário recém-criado
-
-        # Cria o board padrão para o usuário
-        cursor.execute(
-            "INSERT INTO boards (user_id, name) VALUES (?, ?)",
-            (user_id, f"Board do {nome}")
-        )
-
         conn.commit()
+        
+        # Retorna o ID do usuário recém-criado
+        user_id = cursor.lastrowid
         conn.close()
-
+        
         return {
-            "mensagem": "Usuário criado com sucesso",
-            "usuario": {"id": user_id, "name": nome, "email": email}
+            'usuario': {
+                'id': user_id,
+                'name': nome,
+                'email': email
+            }
         }
 
     @staticmethod
     def login(email, senha):
-        conn = conectar_bd()  # Conectando ao banco de dados
+        conn = conectar_bd()  # Conectar ao banco de dados
         cursor = conn.cursor()
 
-        # Verificar se o usuário existe e se a senha está correta
-        cursor.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, senha))
+        cursor.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, senha))
+        usuario = cursor.fetchone()  # Pega o primeiro resultado que corresponde
+
+        conn.close()
+
+        if usuario:
+            return {
+                'id': usuario[0],  # Ajuste conforme necessário
+                'name': usuario[1],
+                'email': usuario[2],
+                'board': {
+                    'id': usuario[3],  # O board pode estar em outro campo
+                    'name': 'Board de ' + usuario[1]  # Exemplo de board associado
+                }
+            }
+        return None
+
+    @staticmethod
+    def buscar_todos_usuarios():
+        conn = conectar_bd()
+        cursor = conn.cursor()
+
+        # Buscar todos os usuários
+        cursor.execute("SELECT id, name, email FROM users")
+        usuarios = cursor.fetchall()
+        conn.close()
+
+        if usuarios:
+            return usuarios
+        else:
+            return None
+
+    @staticmethod
+    def buscar_usuario_por_id(user_id):
+        conn = conectar_bd()
+        cursor = conn.cursor()
+
+        # Buscar o usuário pelo ID
+        cursor.execute("SELECT id, name, email FROM users WHERE id = ?", (user_id,))
         usuario = cursor.fetchone()
         conn.close()
 
         if usuario:
-            # Gerar o token para o usuário com a função gerar_token
-            token = gerar_token(usuario[0])  # Considerando que o ID do usuário está na primeira posição (indice 0)
-            return usuario, token  # Retorna o usuário e o token gerado
-        
-        return None, None  # Se as credenciais forem inválidas
+            return usuario  # Retorna o usuário se encontrado
+        return None  # Retorna None caso não encontre o usuário
