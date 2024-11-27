@@ -2,7 +2,7 @@ import jwt
 from datetime import datetime, timedelta, timezone
 
 class AuthService:
-    SECRET_KEY = "sua_chave_secreta"  # Substitua por uma chave secreta segura
+    SECRET_KEY = "sua_chave_secreta_aqui"  # Substitua por uma chave secreta segura
 
     @staticmethod
     def gerar_token(user_id):

@@ -1,9 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import Flask, Blueprint, request, jsonify
 from flasgger import swag_from
 from functools import wraps
 from ..services.usuario_service import UsuarioService
 from ..services.board_service import BoardService
-from app.services.auth import AuthService  # Corrigido
+from app.services.auth import AuthService
 
 # Defina o decorador antes de usá-lo
 def token_required(f):
@@ -167,20 +167,32 @@ def login():
 @token_required  # Protege o endpoint com a autenticação
 @swag_from({
     'tags': ['Usuários'],
-    'description': 'Retorna os dados do usuário logado com o board associado',
+    'description': 'Retorna os dados do usuário logado com o board e tarefas associados',
     'responses': {
         '200': {
-            'description': 'Usuário encontrado com board associado',
+            'description': 'Usuário encontrado com board e tarefas associadas',
             'examples': {
                 'application/json': {
-                    'usuario': {'id': 1, 'name': 'João', 'email': 'joao@exemplo.com', 'board': {'id': 1, 'name': 'Meu Board Padrão'}}
+                    'usuario': {
+                        'id': 1, 
+                        'name': 'João', 
+                        'email': 'joao@exemplo.com', 
+                        'board': {
+                            'id': 1, 
+                            'name': 'Meu Board Padrão',
+                            'tarefas': [
+                                {'id': 1, 'titulo': 'Tarefa 1', 'descricao': 'Descrição da tarefa 1'},
+                                {'id': 2, 'titulo': 'Tarefa 2', 'descricao': 'Descrição da tarefa 2'}
+                            ]
+                        }
+                    }
                 }
             }
         },
         '404': {
-            'description': 'Usuário não encontrado',
+            'description': 'Usuário ou board não encontrado',
             'examples': {
-                'application/json': {'erro': 'Usuário não encontrado'}
+                'application/json': {'erro': 'Usuário ou board não encontrado'}
             }
         }
     }
@@ -192,15 +204,19 @@ def buscar_usuario_logado(user_id):
     if not usuario:
         return jsonify({'erro': 'Usuário não encontrado'}), 404
 
-    # Buscar o board associado ao usuário
-    board = BoardService.buscar_board_por_usuario(user_id)
+    # Buscar o board com as tarefas associadas ao usuário
+    board_com_tarefas = BoardService.buscar_board_com_tarefas_por_usuario(user_id)
 
-    # Retornar os dados do usuário com o board
+    if not board_com_tarefas:
+        return jsonify({'erro': 'Board não encontrado'}), 404
+
+    # Criar a resposta com os dados do usuário, board e tarefas
     usuario_dict = {
         'id': usuario[0],
         'name': usuario[1],
         'email': usuario[2],
-        'board': {'id': board['id'], 'name': board['name']} if board else None
+        'board': board_com_tarefas  # Incluindo o board com as tarefas associadas
     }
 
     return jsonify({'usuario': usuario_dict}), 200
+

@@ -1,21 +1,22 @@
 import sqlite3
 from flask import Flask
+from flask_cors import CORS  # Importando o CORS
 from flasgger import Swagger
 from .routes.usuarios import usuarios_bp
 from .routes.tarefas import tarefas_bp
-# Função para conectar ao banco de dados SQLite
-def conectar_bd():
-    return sqlite3.connect('database.db')  # Ou o nome do seu arquivo de banco de dados
 
 # Função para criar o aplicativo Flask
 def create_app():
     app = Flask(__name__)
 
+    # Configuração do CORS para toda a aplicação
+    CORS(app, origins=["http://localhost:8080"]) # Permitindo todas as origens (substitua conforme necessário)
+
     # Configuração do Swagger
     Swagger(app)  # Isso ativa o Swagger UI na URL /apidocs
 
     # Configurações do aplicativo
-    app.config['SECRET_KEY'] = 'your_secret_key'
+    app.config['SECRET_KEY'] = 'sua_chave_secreta_aqui'
 
     # Registrar rotas, blueprints, etc.
     from .routes import usuarios
